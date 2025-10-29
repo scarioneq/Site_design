@@ -29,7 +29,7 @@ def user_login(request):
                 login(request, user)
                 if user.is_superuser:
                     return redirect('/superadmin/')
-                return redirect('profile')
+                return redirect('index')
             else:
                 messages.error(request, 'Неверный логин или пароль')
     else:
