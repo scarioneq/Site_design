@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Портал дизайна интерьера</title>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'index' %}">Главная</a>
+        {% if user.is_authenticated %}
+            {% if user.is_superuser %}
+                <a href="/superadmin/">Панель администратора</a>
+            {% else %}
+                <a href="{% url 'profile' %}">Личный кабинет</a>
+            {% endif %}
+            <a href="{% url 'logout' %}">Выход</a>
+        {% else %}
+            <a href="{% url 'login' %}">Вход</a>
+            <a href="{% url 'register' %}">Регистрация</a>
+        {% endif %}
+    </nav>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div>{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

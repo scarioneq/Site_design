@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Портал дизайна интерьера</h1>
+
+<div>
+    <h2>Статистика</h2>
+    <p>Заявок в работе: {{ in_progress_count }}</p>
+</div>
+
+<div>
+    <h2>Последние выполненные работы</h2>
+    {% if completed_applications %}
+        {% for application in completed_applications %}
+            <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                <h3>{{ application.title }}</h3>
+                <p>Категория: {{ application.category.name }}</p>
+                <p>Дата: {{ application.created_at|date:"d.m.Y H:i" }}</p>
+                {% if application.photo %}
+                    <img src="{{ application.photo.url }}" alt="{{ application.title }}" width="200">
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Пока нет выполненных работ</p>
+    {% endif %}
+</div>
+{% endblock %}
