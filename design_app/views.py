@@ -2,7 +2,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import CustomUserCreationForm, LoginForm, ApplicationForm
+from .forms import CustomUserCreationForm, LoginForm, ApplicationForm, CategoryForm, ApplicationCompleteForm, ApplicationAcceptForm
 from .models import Application, Category
 
 def index(request):
@@ -27,7 +27,7 @@ def user_login(request):
             if user is not None:
                 login(request, user)
                 if user.is_superuser:
-                    return redirect('/superadmin/')
+                    return redirect('../admin/dashboard/')
                 return redirect('index')
             else:
                 messages.error(request, 'Неверный логин или пароль')
@@ -103,3 +103,106 @@ def delete_application(request, application_id):
         return redirect('profile')
 
     return render(request, 'application/delete_confirm.html', {'application': application})
+
+
+def admin_required(function):
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            messages.error(request, 'Доступ запрещен')
+            return redirect('index')
+        return function(request, *args, **kwargs)
+
+    return wrapper
+
+@login_required
+@admin_required
+def admin_dashboard(request):
+    applications = Application.objects.all().order_by('-created_at')
+
+    status_filter = request.GET.get('status')
+    if status_filter:
+        applications = applications.filter(status=status_filter)
+
+    context = {
+        'applications': applications,
+        'status_choices': Application.STATUS_CHOICES,
+    }
+    return render(request, 'admin/dashboard.html', context)
+
+@login_required
+@admin_required
+def change_application_status(request, application_id):
+    application = get_object_or_404(Application, id=application_id)
+
+    if not application.can_change_status():
+        messages.error(request, 'Нельзя изменить статус этой заявки')
+        return redirect('admin_dashboard')
+
+    if application.can_change_to_in_progress():
+        form_class = ApplicationAcceptForm
+        success_status = 'in_progress'
+        success_message = 'Заявка принята в работу'
+
+    elif application.can_change_to_completed():
+        form_class = ApplicationCompleteForm
+        success_status = 'completed'
+        success_message = 'Заявка завершена'
+    else:
+        messages.error(request, 'Неизвестное действие для заявки')
+        return redirect('admin_dashboard')
+
+    if request.method == 'POST':
+        form = form_class(request.POST, request.FILES, instance=application)
+        if form.is_valid():
+
+            application.status = success_status
+            application.save()
+            form.save()
+
+            messages.success(request, f'{success_message}: "{application.title}"')
+            return redirect('admin_dashboard')
+    else:
+        form = form_class(instance=application)
+
+    context = {
+        'form': form,
+        'application': application,
+    }
+    return render(request, 'admin/change_status.html', context)
+
+@login_required
+@admin_required
+def manage_categories(request):
+    categories = Category.objects.all().order_by('name')
+
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Категория успешно создана')
+            return redirect('manage_categories')
+    else:
+        form = CategoryForm()
+
+    context = {
+        'categories': categories,
+        'form': form,
+    }
+    return render(request, 'admin/categories.html', context)
+
+
+@login_required
+@admin_required
+def delete_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+
+    if request.method == 'POST':
+        category_name = category.name
+        category.delete()
+        messages.success(request, f'Категория "{category_name}" и все связанные заявки удалены')
+        return redirect('manage_categories')
+
+    context = {
+        'category': category,
+    }
+    return render(request, 'admin/delete_category.html', context)

@@ -16,9 +16,20 @@
                 <h3>{{ application.title }}</h3>
                 <p>Категория: {{ application.category.name }}</p>
                 <p>Дата: {{ application.created_at|date:"d.m.Y H:i" }}</p>
-                {% if application.photo %}
-                    <img src="{{ application.photo.url }}" alt="{{ application.title }}" width="200">
-                {% endif %}
+                <div style="display: flex; gap: 20px;">
+                    <div>
+                        <strong>Помещение до:</strong><br>
+                        {% if application.photo %}
+                            <img src="{{ application.photo.url }}" alt="Помещение до" width="200">
+                        {% endif %}
+                    </div>
+                    <div>
+                        <strong>Дизайн после:</strong><br>
+                        {% if application.design_photo %}
+                            <img src="{{ application.design_photo.url }}" alt="Дизайн после" width="200" style="border: 3px solid green;">
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         {% endfor %}
     {% else %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Удаление категории</h1>
+
+<h2>Вы уверены, что хотите удалить категорию "{{ category.name }}"?</h2>
+<p><strong>Внимание:</strong> Будут удалены ВСЕ заявки этой категории!</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Да, удалить категорию и все заявки</button>
+    <a href="{% url 'manage_categories' %}">Отмена</a>
+</form>
+{% endblock %}

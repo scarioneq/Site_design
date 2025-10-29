@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from .validators import validate_cyrillic, validate_latin, validate_image_size, validate_image_extension
 
-
 class CustomUser(AbstractUser):
     full_name = models.CharField(max_length=100, validators=[validate_cyrillic])
     login = models.CharField(max_length=50, unique=True, validators=[validate_latin])
@@ -51,3 +50,12 @@ class Application(models.Model):
 
     def can_be_deleted(self):
         return self.status == 'new'
+
+    def can_change_to_in_progress(self):
+        return self.status == 'new'
+
+    def can_change_to_completed(self):
+        return self.status == 'in_progress'
+
+    def can_change_status(self):
+        return self.can_change_to_in_progress() or self.can_change_to_completed()

@@ -49,3 +49,42 @@ class ApplicationForm(forms.ModelForm):
         help_texts = {
             'photo': 'Форматы: jpg, jpeg, png, bmp. Максимальный размер: 2MB',
         }
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Название категории'}),
+        }
+
+
+class ApplicationAcceptForm(forms.ModelForm):
+    class Meta:
+        model = Application
+        fields = ['comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Введите комментарий при принятии заявки в работу'
+            }),
+        }
+
+    def clean_comment(self):
+        comment = self.cleaned_data.get('comment')
+        if not comment:
+            raise forms.ValidationError('Комментарий обязателен при принятии заявки в работу')
+        return comment
+
+
+class ApplicationCompleteForm(forms.ModelForm):
+    class Meta:
+        model = Application
+        fields = ['design_photo']
+
+    def clean_design_photo(self):
+        design_photo = self.cleaned_data.get('design_photo')
+        if not design_photo:
+            raise forms.ValidationError('Изображение дизайна обязательно при завершении заявки')
+        return design_photo
