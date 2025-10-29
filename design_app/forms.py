@@ -1,11 +1,12 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, Application, Category
+from .validators import validate_latin, validate_cyrillic
 
 
 class CustomUserCreationForm(UserCreationForm):
-    full_name = forms.CharField(max_length=100, label='ФИО')
-    login = forms.CharField(max_length=50, label='Логин')
+    full_name = forms.CharField(max_length=100, label='ФИО', validators=[validate_cyrillic])
+    login = forms.CharField(max_length=50, label='Логин', validators=[validate_latin])
     email = forms.EmailField(label='Email')
     password1 = forms.CharField(label='Пароль', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Повтор пароля', widget=forms.PasswordInput)
@@ -31,3 +32,20 @@ class CustomUserCreationForm(UserCreationForm):
 class LoginForm(forms.Form):
     login = forms.CharField(label='Логин')
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
+
+class ApplicationForm(forms.ModelForm):
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        empty_label="Выберите категорию"
+    )
+
+    class Meta:
+        model = Application
+        fields = ['title', 'description', 'category', 'photo']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-input'}),
+            'description': forms.Textarea(attrs={'rows': 4}),
+        }
+        help_texts = {
+            'photo': 'Форматы: jpg, jpeg, png, bmp. Максимальный размер: 2MB',
+        }

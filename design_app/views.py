@@ -1,10 +1,9 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import CustomUserCreationForm, LoginForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .forms import CustomUserCreationForm, LoginForm, ApplicationForm
 from .models import Application, Category
-
 
 def index(request):
     completed_applications = Application.objects.filter(status='completed').order_by('-created_at')[:4]
@@ -57,3 +56,50 @@ def register(request):
 def user_logout(request):
     logout(request)
     return redirect('index')
+
+
+@login_required
+def profile(request):
+    applications = Application.objects.filter(user=request.user).order_by('-created_at')
+
+    status_filter = request.GET.get('status')
+    if status_filter:
+        applications = applications.filter(status=status_filter)
+
+    context = {
+        'applications': applications,
+        'status_choices': Application.STATUS_CHOICES,
+    }
+    return render(request, 'user/profile.html', context)
+
+
+@login_required
+def create_application(request):
+    if request.method == 'POST':
+        form = ApplicationForm(request.POST, request.FILES)
+        if form.is_valid():
+            application = form.save(commit=False)
+            application.user = request.user
+            application.save()
+            messages.success(request, 'Заявка успешно создана!')
+            return redirect('profile')
+    else:
+        form = ApplicationForm()
+
+    return render(request, 'application/create.html', {'form': form})
+
+
+@login_required
+def delete_application(request, application_id):
+    application = get_object_or_404(Application, id=application_id, user=request.user)
+
+    if not application.can_be_deleted():
+        messages.error(request, 'Нельзя удалить заявку, которая уже принята в работу или выполнена')
+        return redirect('profile')
+
+    if request.method == 'POST':
+        application.delete()
+        messages.success(request, 'Заявка успешно удалена')
+        return redirect('profile')
+
+    return render(request, 'application/delete_confirm.html', {'application': application})

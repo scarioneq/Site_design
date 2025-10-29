@@ -1,17 +1,7 @@
+import os
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-import re
-from django.core.exceptions import ValidationError
-
-
-def validate_cyrillic(value):
-    if not re.match(r'^[А-Яа-яёЁ\s-]+$', value):
-        raise ValidationError('ФИО должно содержать только кириллические буквы, дефис и пробелы.')
-
-
-def validate_latin(value):
-    if not re.match(r'^[a-zA-Z-]+$', value):
-        raise ValidationError('Логин должен содержать только латинские буквы и дефис.')
+from .validators import validate_cyrillic, validate_latin, validate_image_size, validate_image_extension
 
 
 class CustomUser(AbstractUser):
@@ -41,12 +31,23 @@ class Application(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    photo = models.ImageField(upload_to='application_photos/')
+    photo = models.ImageField(
+        upload_to='application_photos/',
+        validators=[validate_image_size, validate_image_extension]
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    design_photo = models.ImageField(upload_to='design_photos/', null=True, blank=True)
+    design_photo = models.ImageField(
+        upload_to='design_photos/',
+        null=True,
+        blank=True,
+        validators=[validate_image_size, validate_image_extension]
+    )
     comment = models.TextField(blank=True)
 
     def __str__(self):
         return self.title
+
+    def can_be_deleted(self):
+        return self.status == 'new'

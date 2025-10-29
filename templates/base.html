@@ -10,7 +10,7 @@
             {% if user.is_superuser %}
                 <a href="/superadmin/">Панель администратора</a>
             {% else %}
-{#                <a href="{% url 'profile' %}">Личный кабинет</a>#}
+                <a href="{% url 'profile' %}">Личный кабинет</a>
             {% endif %}
             <a href="{% url 'logout' %}">Выход</a>
         {% else %}
