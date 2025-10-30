@@ -1,95 +1,154 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Панель администратора</h1>
+<div class="row">
+    <div class="col-12">
+        <h1 class="display-5 mb-4">
+            <i class="fas fa-cog text-primary"></i> Панель администратора
+        </h1>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <nav class="nav nav-pills">
+                    <a class="nav-link active" href="{% url 'admin_dashboard' %}">
+                        <i class="fas fa-list"></i> Все заявки
+                    </a>
+                    <a class="nav-link" href="{% url 'manage_categories' %}">
+                        <i class="fas fa-tags"></i> Управление категориями
+                    </a>
+                    <a class="nav-link" href="/superadmin/">
+                        <i class="fas fa-tools"></i> Django админка
+                    </a>
+                    <a class="nav-link" href="{% url 'index' %}">
+                        <i class="fas fa-home"></i> На главную
+                    </a>
+                </nav>
+            </div>
+        </div>
 
-<nav>
-    <a href="{% url 'manage_categories' %}">Управление категориями</a>
-    <a href="/superadmin/">Django админка</a>
-    <a href="{% url 'index' %}">На главную</a>
-</nav>
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5 mb-0"><i class="fas fa-list-alt"></i> Все заявки</h2>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label"><strong>Фильтр по статусу:</strong></label>
+                            <select name="status" class="form-select" onchange="this.form.submit()">
+                                <option value="">Все заявки</option>
+                                {% for status_value, status_label in status_choices %}
+                                    <option value="{{ status_value }}" 
+                                            {% if request.GET.status == status_value %}selected{% endif %}>
+                                        {{ status_label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
 
-<h2>Все заявки</h2>
-
-<form method="get">
-    <div>
-        <label>Фильтр по статусу:</label>
-        <select name="status" onchange="this.form.submit()">
-            <option value="">Все заявки</option>
-            {% for status_value, status_label in status_choices %}
-                <option value="{{ status_value }}" {% if request.GET.status == status_value %}selected{% endif %}>
-                    {{ status_label }}
-                </option>
-            {% endfor %}
-        </select>
+                {% if applications %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Дата создания</th>
+                                    <th>Пользователь</th>
+                                    <th>Название</th>
+                                    <th>Категория</th>
+                                    <th>Статус</th>
+                                    <th>Фото</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in applications %}
+                                <tr>
+                                    <td>{{ app.created_at|date:"d.m.Y H:i" }}</td>
+                                    <td>{{ app.user.full_name }}</td>
+                                    <td><strong>{{ app.title }}</strong></td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ app.category.name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if app.status == 'new' %}
+                                            <span class="badge bg-warning">{{ app.get_status_display }}</span>
+                                        {% elif app.status == 'in_progress' %}
+                                            <span class="badge bg-info">{{ app.get_status_display }}</span>
+                                        {% elif app.status == 'completed' %}
+                                            <span class="badge bg-success">{{ app.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if app.status == 'completed' %}
+                                            <div class="row g-1">
+                                                <div class="col-6">
+                                                    <small><strong>До:</strong></small><br>
+                                                    {% if app.photo %}
+                                                        <img src="{{ app.photo.url }}" 
+                                                             alt="Помещение до" 
+                                                             class="img-thumbnail" 
+                                                             style="width: 80px; height: 80px; object-fit: cover;">
+                                                    {% else %}
+                                                        <span class="text-muted small">Нет фото</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-6">
+                                                    <small><strong>После:</strong></small><br>
+                                                    {% if app.design_photo %}
+                                                        <img src="{{ app.design_photo.url }}" 
+                                                             alt="Дизайн после" 
+                                                             class="img-thumbnail border border-success border-2"
+                                                             style="width: 80px; height: 80px; object-fit: cover;">
+                                                    {% else %}
+                                                        <span class="text-muted small">Нет дизайна</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            {% if app.photo %}
+                                                <img src="{{ app.photo.url }}" 
+                                                     alt="{{ app.title }}" 
+                                                     class="img-thumbnail"
+                                                     style="width: 100px; height: 100px; object-fit: cover;">
+                                                <br>
+                                                <small class="text-muted">Помещение</small>
+                                            {% else %}
+                                                <span class="text-muted">Нет фото</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if app.can_change_status %}
+                                            {% if app.can_change_to_in_progress %}
+                                                <a href="{% url 'change_application_status' app.id %}" 
+                                                   class="btn btn-success btn-sm">
+                                                    <i class="fas fa-play"></i> Принять в работу
+                                                </a>
+                                            {% elif app.can_change_to_completed %}
+                                                <a href="{% url 'change_application_status' app.id %}" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-check"></i> Завершить
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">Статус изменен</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Заявок нет</h4>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
-</form>
-
-{% if applications %}
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Дата создания</th>
-                <th>Пользователь</th>
-                <th>Название</th>
-                <th>Категория</th>
-                <th>Статус</th>
-                <th>Фото</th>  <!-- ← ИЗМЕНИЛИ НАЗВАНИЕ -->
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for app in applications %}
-            <tr>
-                <td>{{ app.created_at|date:"d.m.Y H:i" }}</td>
-                <td>{{ app.user.full_name }}</td>
-                <td>{{ app.title }}</td>
-                <td>{{ app.category.name }}</td>
-                <td>{{ app.get_status_display }}</td>
-                <td>
-                    {% if app.status == 'completed' %}
-                        <div>
-                            <strong>До:</strong><br>
-                            {% if app.photo %}
-                                <img src="{{ app.photo.url }}" alt="Помещение до" width="80" style="max-height: 80px;">
-                            {% else %}
-                                <span style="color: #999;">Нет фото</span>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <strong>После:</strong><br>
-                            {% if app.design_photo %}
-                                <img src="{{ app.design_photo.url }}" alt="Дизайн после" width="80" style="max-height: 80px; border: 2px solid green;">
-                            {% else %}
-                                <span style="color: #999;">Нет дизайна</span>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        {% if app.photo %}
-                            <img src="{{ app.photo.url }}" alt="{{ app.title }}" width="100" style="max-height: 100px;">
-                            <br>
-                            <small>Помещение</small>
-                        {% else %}
-                            <span style="color: #999;">Нет фото</span>
-                        {% endif %}
-                    {% endif %}
-                </td>
-                <td>
-                    {% if app.can_change_status %}
-                        {% if app.can_change_to_in_progress %}
-                            <a href="{% url 'change_application_status' app.id %}">Принять в работу</a>
-                        {% elif app.can_change_to_completed %}
-                            <a href="{% url 'change_application_status' app.id %}">Завершить</a>
-                        {% endif %}
-                    {% else %}
-                        <span>Статус изменен</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>Заявок нет</p>
-{% endif %}
+</div>
 {% endblock %}

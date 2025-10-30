@@ -2,7 +2,6 @@ import re
 import os
 from django.core.exceptions import ValidationError
 
-
 def validate_cyrillic(value):
     if not re.match(r'^[А-Яа-яёЁ\s-]+$', value):
         raise ValidationError('ФИО должно содержать только кириллические буквы, дефис и пробелы.')

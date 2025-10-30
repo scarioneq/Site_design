@@ -1,58 +1,99 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Личный кабинет</h1>
+<div class="row">
+    <div class="col-12">
+        <h1 class="display-5 mb-4">
+            <i class="fas fa-user text-primary"></i> Личный кабинет
+        </h1>
 
-<h2>Мои заявки</h2>
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5 mb-0"><i class="fas fa-list"></i> Мои заявки</h2>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label"><strong>Фильтр по статусу:</strong></label>
+                            <select name="status" class="form-select" onchange="this.form.submit()">
+                                <option value="">Все заявки</option>
+                                {% for status_value, status_label in status_choices %}
+                                    <option value="{{ status_value }}" 
+                                            {% if request.GET.status == status_value %}selected{% endif %}>
+                                        {{ status_label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
 
-<form method="get">
-    <div>
-        <label>Фильтр по статусу:</label>
-        <select name="status" onchange="this.form.submit()">
-            <option value="">Все заявки</option>
-            {% for status_value, status_label in status_choices %}
-                <option value="{{ status_value }}" {% if request.GET.status == status_value %}selected{% endif %}>
-                    {{ status_label }}
-                </option>
-            {% endfor %}
-        </select>
+                {% if applications %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Дата создания</th>
+                                    <th>Название</th>
+                                    <th>Описание</th>
+                                    <th>Категория</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in applications %}
+                                <tr>
+                                    <td>{{ app.created_at|date:"d.m.Y H:i" }}</td>
+                                    <td><strong>{{ app.title }}</strong></td>
+                                    <td>{{ app.description|truncatewords:10 }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ app.category.name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if app.status == 'new' %}
+                                            <span class="badge bg-warning">{{ app.get_status_display }}</span>
+                                        {% elif app.status == 'in_progress' %}
+                                            <span class="badge bg-info">{{ app.get_status_display }}</span>
+                                        {% elif app.status == 'completed' %}
+                                            <span class="badge bg-success">{{ app.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if app.can_be_deleted %}
+                                            <a href="{% url 'delete_application' app.id %}" 
+                                               class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i> Удалить
+                                            </a>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Удаление недоступно</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">У вас пока нет заявок</h4>
+                        <a href="{% url 'create_application' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus"></i> Создать первую заявку
+                        </a>
+                    </div>
+                {% endif %}
+
+                {% if applications %}
+                    <div class="text-center mt-4">
+                        <a href="{% url 'create_application' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus"></i> Создать новую заявку
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
-</form>
-
-{% if applications %}
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Дата создания</th>
-                <th>Название</th>
-                <th>Описание</th>
-                <th>Категория</th>
-                <th>Статус</th>
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for app in applications %}
-            <tr>
-                <td>{{ app.created_at|date:"d.m.Y H:i" }}</td>
-                <td>{{ app.title }}</td>
-                <td>{{ app.description }}</td>
-                <td>{{ app.category.name }}</td>
-                <td>{{ app.get_status_display }}</td>
-                <td>
-                    {% if app.can_be_deleted %}
-                        <a href="{% url 'delete_application' app.id %}">Удалить</a>
-                    {% else %}
-                        <span>Удаление недоступно</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>У вас пока нет заявок</p>
-{% endif %}
-
-<a href="{% url 'create_application' %}">Создать новую заявку</a>
+</div>
 {% endblock %}

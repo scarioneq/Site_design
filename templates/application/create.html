@@ -1,30 +1,51 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Создание заявки</h1>
-
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    
-    {% for field in form %}
-        <div>
-            {{ field.label_tag }}
-            {{ field }}
-            {% if field.errors %}
-                <div style="color: red;">
-                    {% for error in field.errors %}
-                        {{ error }}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h1 class="h4 mb-0"><i class="fas fa-plus-circle"></i> Создание заявки</h1>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">
+                                <strong>{{ field.label }}</strong>
+                            </label>
+                            {{ field }}
+                            
+                            {% if field.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {% for error in field.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                        </div>
                     {% endfor %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-check"></i> Создать заявку
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Вернуться в личный кабинет
+                    </a>
                 </div>
-            {% endif %}
-            {% if field.help_text %}
-                <small>{{ field.help_text }}</small>
-            {% endif %}
+            </div>
         </div>
-    {% endfor %}
-
-    <button type="submit">Создать заявку</button>
-</form>
-
-<a href="{% url 'profile' %}">Вернуться в личный кабинет</a>
+    </div>
+</div>
 {% endblock %}
